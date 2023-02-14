@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# version: 1.0.0
+
+set -eo pipefail
+
+if [ "${APP_PATH}" = "" ]; then
+	echo "Usage: APP_PATH='example-app' $0"
+
+    exit 1
+fi
+
+tmp_app_dir="/tmp/${APP_PATH}"
+rm -rf "${tmp_app_dir}"
+mkdir -p "${tmp_app_dir}"
+
+function createKustomizationFile() {
+    path="$1"
+    contents=$(yq e '.resources = []' -n)
+    
+    for file in ${path}/*; do
+        [ ! -f "${file}" ] && {
+            echo ">>> Files not found in: ${path} (maybe the FILE_CONTENT_*_BASE64 env variables are not set) <<<" 1>&2
+
+            exit 2
+        }
+        export file_path=$(basename "${file}")
+        contents=$(echo "${contents}" | yq e '.resources += [strenv(file_path)]')
+    done
+
+    echo "$contents" > "${path}/kustomization.yaml"
+}
+
+for file_content_base64_env in ${!FILE_CONTENT_*}; do
+    file_name="$(echo "${file_content_base64_env:13:-7}" | tr '_' '.' | tr '[:upper:]' '[:lower:]')"
+    contents="$(echo "${!file_content_base64_env}" | base64 -d)"
+
+    echo "${contents}" > "${tmp_app_dir}/${file_name}"
+done
+
+kubectl kustomize "${tmp_app_dir}" 2>/dev/null \
+    || createKustomizationFile "${tmp_app_dir}" && kubectl kustomize "${tmp_app_dir}" 
