@@ -25,7 +25,9 @@ function commit() {
     commit_message="${commit_message//\{author_username\}/"${AUTHOR_USERNAME}"}"
     commit_message="${commit_message//\{author\}/"${AUTHOR}"}"
 
-    git add .
+    path="${2:-.}"
+
+    git add "${path}"
     git commit -v -m "$(echo -e "${commit_message}")" || exit 0
 }
 
@@ -60,9 +62,9 @@ case "${action}" in
 
   help)
     echo "$0 config, envs: GIT_USER_NAME, GIT_USER_EMAIL"
-    echo "$0 commit, envs: GIT_COMMIT_MESSAGE [PROJECT_PATH] [COMMIT_SHA] [MESSAGE] [AUTHOR_USERNAME] [AUTHOR]"
+    echo "$0 commit [PATH], envs: GIT_COMMIT_MESSAGE [PROJECT_PATH] [COMMIT_SHA] [MESSAGE] [AUTHOR_USERNAME] [AUTHOR]"
     echo "$0 push, envs: GIT_ORIGIN_URL [GIT_REMOTE_BRANCH]"
-    echo "$0 commitAndPush [--autoconfig], alias of [config],commit,push"
+    echo "$0 commitAndPush [PATH] [--autoconfig], alias of [config],commit,push"
     ;;
 
   version)
