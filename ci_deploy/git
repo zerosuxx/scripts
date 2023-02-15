@@ -33,7 +33,7 @@ function commit() {
 
 function push() {
     : ${GIT_REMOTE_BRANCH:="main"}
-    git remote add origin "${GIT_ORIGIN_URL}" || git remote set-url origin "${GIT_ORIGIN_URL}"
+    git remote add origin "${GIT_ORIGIN_URL}" 2>/dev/null || git remote set-url origin "${GIT_ORIGIN_URL}"
 
     tryToConfigureSSHKey
     git push origin "HEAD:${GIT_REMOTE_BRANCH}"
