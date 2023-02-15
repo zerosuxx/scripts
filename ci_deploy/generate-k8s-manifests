@@ -1,17 +1,51 @@
 #!/usr/bin/env bash
-# version: 1.0.0
+# version: 1.1.0
 
 set -eo pipefail
 
-if [ "${APP_PATH}" = "" ]; then
-	echo "Usage: APP_PATH='example-app' $0"
+function help() {
+    echo "Usage: APP_PATH='example-app' $0 [-h|--help] [-c|--clean] [-o|--output[=]<manifest-file-path>]"
+}
 
-    exit 1
-fi
+function parseArguments() {
+    outputFile=""
+    cleanupOutputFolder=0
 
-tmp_app_dir="/tmp/${APP_PATH}"
-rm -rf "${tmp_app_dir}"
-mkdir -p "${tmp_app_dir}"
+    while getopts "co:h-:" option; do
+        case "${option}" in
+            -)
+                case "${OPTARG}" in
+                    clean)
+                        cleanupOutputFolder=1
+                        ;;
+                    output)
+                        outputFile="${!OPTIND}";
+                        OPTIND=$(( $OPTIND + 1 ))
+                        ;;
+                    output=*)
+                        outputFile=${OPTARG#*=}
+                        ;;
+                    help)
+                        help
+                        ;;
+                esac;;
+            c)
+                cleanupOutputFolder=1
+                ;;
+            o)
+                outputFile="${OPTARG}";
+                ;;
+            h)
+                help
+                exit
+                ;;
+            *)
+                help
+                exit 1
+                ;;
+        esac
+    done
+}
 
 function createKustomizationFile() {
     path="$1"
@@ -19,7 +53,7 @@ function createKustomizationFile() {
     
     for file in ${path}/*; do
         [ ! -f "${file}" ] && {
-            echo ">>> Files not found in: ${path} (maybe the FILE_CONTENT_*_BASE64 env variables are not set) <<<" 1>&2
+            echo "⚠️  Files not found in: ${path} (maybe the FILE_CONTENT_*_BASE64 env variables are not set)" 1>&2
 
             exit 2
         }
@@ -30,6 +64,20 @@ function createKustomizationFile() {
     echo "$contents" > "${path}/kustomization.yaml"
 }
 
+parseArguments "$@"
+
+if [ "${APP_PATH}" == "" ]; then
+    echo "⚠️  'APP_PATH' not configured" 1>&2
+	help
+
+    exit 1
+fi
+
+tmp_app_dir="/tmp/${APP_PATH}"
+rm -rf "${tmp_app_dir}"
+mkdir -p "${tmp_app_dir}"
+
+
 for file_content_base64_env in ${!FILE_CONTENT_*}; do
     file_name="$(echo "${file_content_base64_env:13:-7}" | tr '_' '.' | tr '[:upper:]' '[:lower:]')"
     contents="$(echo "${!file_content_base64_env}" | base64 -d)"
@@ -37,5 +85,14 @@ for file_content_base64_env in ${!FILE_CONTENT_*}; do
     echo "${contents}" > "${tmp_app_dir}/${file_name}"
 done
 
-kubectl kustomize "${tmp_app_dir}" 2>/dev/null \
-    || createKustomizationFile "${tmp_app_dir}" && kubectl kustomize "${tmp_app_dir}" 
+contents=$(kubectl kustomize "${tmp_app_dir}" 2>/dev/null \
+    || createKustomizationFile "${tmp_app_dir}" && kubectl kustomize "${tmp_app_dir}")
+
+if [ "${outputFile}" != "" ]; then
+    outputFolder=$(dirname "${outputFile}")
+    [ $cleanupOutputFolder == 1 ] && rm -rf "${outputFolder}"
+    mkdir -p "${outputFolder}"
+    echo "${contents}" > "${outputFile}"
+else
+    echo "${contents}"
+fi
