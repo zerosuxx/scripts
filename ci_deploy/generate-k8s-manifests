@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version: 1.1.0
+# version: 1.1.1
 
 set -eo pipefail
 
@@ -86,7 +86,7 @@ for file_content_base64_env in ${!FILE_CONTENT_*}; do
 done
 
 contents=$(kubectl kustomize "${tmp_app_dir}" 2>/dev/null \
-    || createKustomizationFile "${tmp_app_dir}" && kubectl kustomize "${tmp_app_dir}")
+    || (createKustomizationFile "${tmp_app_dir}" && kubectl kustomize "${tmp_app_dir}"))
 
 if [ "${outputFile}" != "" ]; then
     outputFolder=$(dirname "${outputFile}")
