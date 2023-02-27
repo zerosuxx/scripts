@@ -9,6 +9,8 @@ function tryToConfigureSSHKey() {
       if [[ -z "${GIT_SSH_COMMAND}" ]]; then
           export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -i ${GIT_SSH_KEY_FILE}"
       fi
+  else
+      echo "> SSH Key file not found. (env: GIT_SSH_KEY_FILE)"
   fi
 }
 
