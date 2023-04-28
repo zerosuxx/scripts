@@ -1,39 +1,39 @@
 #!/usr/bin/env bash
-# version: 2.1.0
+# version: 2.2.0
 
 set -eo pipefail
 
 function help() {
-    echo "Usage: $0 [-h|--help] [-c|--clean] [-o|--output[=]<manifest-file-path>]"
+    echo "Usage: `basename $0` [-h|--help] [-c|--clean] [-o|--output[=]<manifest-file-path>]"
 }
 
 function parse_arguments() {
-    outputFile=""
-    cleanupOutputFolder=0
+    output_file=""
+    cleanup_output_folder=0
 
     while getopts "co:h-:" option; do
         case "${option}" in
             -)
                 case "${OPTARG}" in
                     clean)
-                        cleanupOutputFolder=1
+                        cleanup_output_folder=1
                         ;;
                     output)
-                        outputFile="${!OPTIND}";
+                        output_file="${!OPTIND}";
                         OPTIND=$(( $OPTIND + 1 ))
                         ;;
                     output=*)
-                        outputFile=${OPTARG#*=}
+                        output_file=${OPTARG#*=}
                         ;;
                     help)
                         help
                         ;;
                 esac;;
             c)
-                cleanupOutputFolder=1
+                cleanup_output_folder=1
                 ;;
             o)
-                outputFile="${OPTARG}";
+                output_file="${OPTARG}";
                 ;;
             h)
                 help
@@ -60,6 +60,7 @@ function create_kustomization_file() {
 }
 
 parse_arguments "$@"
+shift $(($OPTIND - 1))
 
 tmp_app_dir="$(mktemp -d)"
 
@@ -90,11 +91,11 @@ contents=$(kubectl kustomize "${tmp_app_dir}" 2>/dev/null \
 
 rm -rf "${tmp_app_dir}"
 
-if [ "${outputFile}" != "" ]; then
-    outputFolder=$(dirname "${outputFile}")
-    [ $cleanupOutputFolder == 1 ] && rm -rf "${outputFolder}"
-    mkdir -p "${outputFolder}"
-    echo "${contents}" > "${outputFile}"
+if [ "${output_file}" != "" ]; then
+    output_folder=$(dirname "${output_file}")
+    [ "${cleanup_output_folder}" == 1 ] && rm -rf "${output_folder}"
+    mkdir -p "${output_folder}"
+    echo "${contents}" > "${output_file}"
 else
     echo "${contents}"
 fi
