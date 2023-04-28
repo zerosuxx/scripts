@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version: 3.1.0
+# version: 4.0.0
 
 set -eo pipefail
 
@@ -12,7 +12,14 @@ if [ -z "${project_name}" ]; then
   exit 1
 fi
 
+function convert_to_file_content_env() {
+  local name=$(echo "$1" | tr '-' '_' | tr '.' '_' | tr '[:lower:]' '[:upper:]')
+  
+  echo "FILE_CONTENT_${name}_BASE64"
+}
+
 files_pattern="$2"
+chunk_max_length=9999
 
 : ${JOB_NAME:="trigger"}
 
@@ -22,16 +29,23 @@ contents=$(echo "$contents" | yq e '.'${JOB_NAME}'.trigger.project = strenv(proj
 contents=$(echo "$contents" | yq e '.'${JOB_NAME}'.trigger.strategy = "depend"')
 
 for file in ${files_pattern}; do
-  export key="FILE_CONTENT_$(basename "${file}" | tr '-' '_' | tr '.' '_' | tr '[:lower:]' '[:upper:]')_BASE64"
+  export file_name=$(basename "${file}")
   export file_content_base64=$(cat "${file}" | base64 -w 0)
+  export chunks=$(echo "${file_content_base64}" | fold -w "${chunk_max_length}")
+  export chunks_length=$(echo "${chunks}" | wc -l)
 
-  if [ ${#file_content_base64} -ge 9999 ]; then
-    echo "Error: '${file}' [${key}] files is too big. (max: 9999, current: ${#file_content_base64})" >&2
-
-    exit 1
+  if [ "${chunks_length}" -gt 1 ]; then
+    i=1
+    for chunk in ${chunks}; do 
+      export key="$(convert_to_file_content_env "${file_name}_part${i}")"
+      export value="${chunk}"
+      contents=$(echo "$contents" | yq e '.'${JOB_NAME}'.variables += {strenv(key):strenv(value)}')
+      i=$((i+1))
+    done
+  else
+    export key="$(convert_to_file_content_env "${file_name}")"
+    contents=$(echo "$contents" | yq e '.'${JOB_NAME}'.variables += {strenv(key):strenv(file_content_base64)}')
   fi
-
-  contents=$(echo "$contents" | yq e '.'${JOB_NAME}'.variables += {strenv(key):strenv(file_content_base64)}')
 done
 
 for env in ${!ENV*}; do
