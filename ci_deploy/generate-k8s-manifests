@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version: 1.1.1
+# version: 2.0.0
 
 set -eo pipefail
 
@@ -7,7 +7,7 @@ function help() {
     echo "Usage: APP_PATH='example-app' $0 [-h|--help] [-c|--clean] [-o|--output[=]<manifest-file-path>]"
 }
 
-function parseArguments() {
+function parse_arguments() {
     outputFile=""
     cleanupOutputFolder=0
 
@@ -47,7 +47,7 @@ function parseArguments() {
     done
 }
 
-function createKustomizationFile() {
+function create_kustomization_file() {
     path="$1"
     contents=$(yq e '.resources = []' -n)
     
@@ -64,7 +64,7 @@ function createKustomizationFile() {
     echo "$contents" > "${path}/kustomization.yaml"
 }
 
-parseArguments "$@"
+parse_arguments "$@"
 
 if [ "${APP_PATH}" == "" ]; then
     echo "⚠️  'APP_PATH' not configured" 1>&2
@@ -77,6 +77,13 @@ tmp_app_dir="/tmp/${APP_PATH}"
 rm -rf "${tmp_app_dir}"
 mkdir -p "${tmp_app_dir}"
 
+for file_content_base64_env in ${!FILE_CONTENT_*}; do
+    if [[ "${file_content_base64_env}" =~ _PART[0-9]+_ ]]; then
+        file_content_base64_env_without_part=$(echo "${file_content_base64_env}" | sed -e 's/\(.*\)_PART[0-9]\+/\1/g')
+        export "${file_content_base64_env_without_part}"+="${!file_content_base64_env}"
+        unset "${file_content_base64_env}"
+    fi
+done
 
 for file_content_base64_env in ${!FILE_CONTENT_*}; do
     file_name="$(echo "${file_content_base64_env:13:-7}" | tr '_' '.' | tr '[:upper:]' '[:lower:]')"
@@ -86,7 +93,7 @@ for file_content_base64_env in ${!FILE_CONTENT_*}; do
 done
 
 contents=$(kubectl kustomize "${tmp_app_dir}" 2>/dev/null \
-    || (createKustomizationFile "${tmp_app_dir}" && kubectl kustomize "${tmp_app_dir}"))
+    || (create_kustomization_file "${tmp_app_dir}" && kubectl kustomize "${tmp_app_dir}"))
 
 if [ "${outputFile}" != "" ]; then
     outputFolder=$(dirname "${outputFile}")
