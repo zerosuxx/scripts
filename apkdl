@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version: 0.1.0
+# version: 0.1.1
 
 set -eo pipefail
 
@@ -12,6 +12,13 @@ log() {
 }
 
 url="$1"
+if [ "$url" == "" ]; then
+  echo "Usage: apkdl APK_MIRROR_URL [curl args]"
+  echo "example #1: apkdl https://www.apkmirror.com/apk/duolingo/duolingo-duolingo/duolingo-duolingo-5-101-7-release/duolingo-language-lessons-5-101-7-android-apk-download/ -o duolingo.apk"
+  echo "example #2: curl -s \$REMOTE_URL/apkdl | bash -s APK_MIRROR_URL"
+  
+  exit 1
+fi
 shift
 base_url="https://www.apkmirror.com"
 
