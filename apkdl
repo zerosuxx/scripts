@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# version: 0.1.0
+
+set -eo pipefail
+
+fetch() {
+  curl -f -L -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0" "$@"
+}
+
+log() {
+  echo "$@" 1>&2
+}
+
+url="$1"
+shift
+base_url="https://www.apkmirror.com"
+
+download_page_url="${base_url}$(fetch -sS "${url}" | sed -nr 's/.*downloadButton.*href="(.*)">/\1/p')"
+log "download page url: ${download_page_url}"
+download_page_contents=$(fetch -sS "${download_page_url}")
+download_path=$(echo $download_page_contents | grep -oP 'data-google-vignette="false" href="(/wp-content/themes/APKMirror/download\.php.*?)"' | sed -nr 's;.*href="(.*)";\1;p')
+download_url="${base_url}${download_path}"
+log "download url: ${download_url}"
+
+fetch "${download_url}" "$@"
