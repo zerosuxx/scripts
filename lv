@@ -4,11 +4,12 @@ repo=$1
 type=$2
 
 if [ "$repo" = "" ]; then
-	echo "Usage: $0 repo [type]"
+    current_script=`basename $0`
+	echo "Usage: $current_script  repo [type]"
     echo
-	echo "example #1: $0 php/php-src tags"
-    echo "example #2: $0 bitnami-labs/sealed-secrets"
-    echo "example #3: curl -s \$REMOTE_URL/$0 | sh -s bitnami-labs/sealed-secrets"
+	echo "example #1: $current_script  php/php-src tags"
+    echo "example #2: $current_script  bitnami-labs/sealed-secrets"
+    echo "example #3: curl -s \$REMOTE_URL/$current_script  | sh -s bitnami-labs/sealed-secrets"
 
     exit 1
 fi
