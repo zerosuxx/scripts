@@ -16,7 +16,7 @@ if [ "$repo" = "" ]; then
     echo
 	echo " > example #1: sudo $current_script zer0go/dns-server"
 	echo " > example #2: sudo $current_script zer0go/wgctrl-go wgshow"
-    echo " > example #3: curl -s https://script.zer0.hu/$current_script | sudo sh -s zer0go/wgctrl-go wgshow 0.1.2 x86_64 darwin"
+    echo " > example #3: curl -s https://scripts.zer0.hu/$current_script | sudo sh -s zer0go/wgctrl-go wgshow 0.1.2 x86_64 darwin"
 
     exit 1
 fi
