@@ -1,0 +1,61 @@
+#!/usr/bin/env sh
+
+set -e
+
+repo=$1
+binary=$2
+version=$3
+arch=$4
+os=$5
+
+default_padding=20
+
+if [ "$repo" = "" ]; then
+    current_script=`basename $0`
+	echo "Usage: $current_script repo [binary] [version] [arch] [os]"
+    echo
+	echo " > example #1: sudo $current_script zer0go/dns-server"
+	echo " > example #2: sudo $current_script zer0go/wgctrl-go wgshow"
+    echo " > example #3: curl -s \$REMOTE_URL/$current_script | sudo sh -s zer0go/wgctrl-go wgshow 0.1.2 x86_64 darwin"
+
+    exit 1
+fi
+
+if [ "$binary" = "" ]; then
+    binary=$(echo "$repo" | cut -d'/' -f2)
+fi
+
+if [ "$version" = "" ]; then
+    version=$(curl -s https://scripts.zer0.hu/lv | sh -s "$repo")
+    if [ "$version" = "" ]; then
+        echo "version cannot be detected."
+        exit 1
+    fi
+    printf "%-${default_padding}s '%s'\n" "detected version:" "$version"
+fi
+
+if [ "$arch" = "" ]; then
+    arch=$(uname -m | tr '[:upper:]' '[:lower:]')
+    printf "%-${default_padding}s '%s'\n" "detected arch:" "$arch"
+fi
+
+if [ "$os" = "" ]; then
+    os=$(uname -s | tr '[:upper:]' '[:lower:]')
+    printf "%-${default_padding}s '%s'\n" "detected os:" "$os"
+fi
+
+url="https://github.com/$repo/releases/download/$version/$binary-$os-$arch"
+target_file="/usr/local/bin/$binary"
+
+printf "%-${default_padding}s '%s'\n" "repo:" "$repo"
+printf "%-${default_padding}s '%s'\n" "binary:" "$binary"
+printf "%-${default_padding}s '%s'\n" "url:" "$url"
+printf "%-${default_padding}s '%s'\n\n" "target file:" "$target_file"
+
+echo "progress:"
+curl -fL -o "$target_file" "$url"
+chmod +x "$target_file"
+
+echo
+echo "The '$repo@$binary:$version' was installed successfuly."
+echo "try to execute the following command: '$binary'"
