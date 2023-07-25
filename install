@@ -16,13 +16,21 @@ if [ "$repo" = "" ]; then
     echo
 	echo " > example #1: sudo $current_script zer0go/dns-server"
 	echo " > example #2: sudo $current_script zer0go/wgctrl-go wgshow"
-    echo " > example #3: curl -s https://scripts.zer0.hu/$current_script | sudo sh -s zer0go/wgctrl-go wgshow 0.1.2 x86_64 darwin"
+	echo " > example #3: sudo $current_script zer0go/wgctrl-go wgshow:wg"
+    echo " > example #4: curl -s https://scripts.zer0.hu/$current_script | sudo sh -s zer0go/wgctrl-go wgshow 0.1.2 x86_64 darwin"
 
     exit 1
 fi
 
 if [ "$binary" = "" ]; then
     binary=$(echo "$repo" | cut -d'/' -f2)
+else
+    target_binary=$(echo "$binary" | cut -d':' -f2)
+    binary=$(echo "$binary" | cut -d':' -f1)
+fi
+
+if [ "$target_binary" = "" ]; then
+    target_binary="$binary"
 fi
 
 if [ "$version" = "" ]; then
@@ -45,7 +53,7 @@ if [ "$os" = "" ]; then
 fi
 
 url="https://github.com/$repo/releases/download/$version/$binary-$os-$arch"
-target_file="/usr/local/bin/$binary"
+target_file="/usr/local/bin/$target_binary"
 
 printf "%-${default_padding}s '%s'\n" "repo:" "$repo"
 printf "%-${default_padding}s '%s'\n" "binary:" "$binary"
@@ -58,4 +66,4 @@ chmod +x "$target_file"
 
 echo
 echo "The '$repo@$binary:$version' was installed successfuly."
-echo "try to execute the following command: '$binary'"
+echo "try to execute the following command: '$target_binary'"

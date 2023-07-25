@@ -2,6 +2,7 @@
 
 ```shell
 $ curl -s https://scripts.zer0.hu/lv | sh -s bitnami-labs/sealed-secrets
+$ curl -s https://scripts.zer0.hu/install | sudo sh -s zer0go/netguard-client ngclient:ng
 ```
 
 ```shell
