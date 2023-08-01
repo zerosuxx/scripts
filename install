@@ -2,6 +2,8 @@
 
 set -e
 
+: ${INSTALL_DIR:="/usr/local/bin"}
+
 repo=$1
 binary=$2
 version=$3
@@ -13,11 +15,14 @@ default_padding=20
 if [ "$repo" = "" ]; then
     current_script=`basename $0`
 	echo "Usage: $current_script repo [binary] [version] [arch] [os]"
+	echo "Available environment variables:"
+	echo " - INSTALL_DIR (default: /usr/local/bin)"
+
     echo
 	echo " > example #1: sudo $current_script zer0go/dns-server"
 	echo " > example #2: sudo $current_script zer0go/wgctrl-go wgshow"
 	echo " > example #3: sudo $current_script zer0go/wgctrl-go wgshow:wg"
-    echo " > example #4: curl -s https://scripts.zer0.hu/$current_script | sudo sh -s zer0go/wgctrl-go wgshow 0.1.2 x86_64 darwin"
+    echo " > example #4: curl -s https://scripts.zer0.hu/$current_script | sudo INSTALL_DIR=/usr/bin sh -s zer0go/wgctrl-go wgshow 0.1.2 x86_64 darwin"
 
     exit 1
 fi
@@ -53,7 +58,7 @@ if [ "$os" = "" ]; then
 fi
 
 url="https://github.com/$repo/releases/download/$version/$binary-$os-$arch"
-target_file="/usr/local/bin/$target_binary"
+target_file="$INSTALL_DIR/$target_binary"
 
 printf "%-${default_padding}s '%s'\n" "repo:" "$repo"
 printf "%-${default_padding}s '%s'\n" "binary:" "$binary"
