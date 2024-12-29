@@ -3,6 +3,7 @@
 set -e
 
 : ${INSTALL_DIR:="/usr/local/bin"}
+: ${NAME_SEPARATOR:="-"}
 
 repo=$1
 binary=$2
@@ -57,8 +58,8 @@ if [ "$os" = "" ]; then
     printf "%-${default_padding}s '%s'\n" "detected os:" "$os"
 fi
 
-url="https://github.com/$repo/releases/download/$version/$binary-$os-$arch"
-target_file="$INSTALL_DIR/$target_binary"
+url="https://github.com/${repo}/releases/download/$version/${binary}${NAME_SEPARATOR}${os}${NAME_SEPARATOR}${arch}"
+target_file="${INSTALL_DIR}/${target_binary}"
 
 printf "%-${default_padding}s '%s'\n" "repo:" "$repo"
 printf "%-${default_padding}s '%s'\n" "binary:" "$binary"
