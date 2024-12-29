@@ -58,7 +58,7 @@ if [ "$os" = "" ]; then
     printf "%-${default_padding}s '%s'\n" "detected os:" "$os"
 fi
 
-url="https://github.com/${repo}/releases/download/$version/${binary}${NAME_SEPARATOR}${os}${NAME_SEPARATOR}${arch}"
+url="https://github.com/${repo}/releases/download/${version}/${binary}${NAME_SEPARATOR}${os}${NAME_SEPARATOR}${arch}"
 target_file="${INSTALL_DIR}/${target_binary}"
 
 printf "%-${default_padding}s '%s'\n" "repo:" "$repo"
