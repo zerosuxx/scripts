@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version: 0.3.0
+# version: 0.3.1
 
 set -euo pipefail
 
@@ -43,7 +43,7 @@ for section in dependencies devDependencies; do
 
   for pkg in $packages; do
     raw_version=$(echo "$lockfile" | yq "${lock_selector_prefix}.${section}.\"$pkg\".version" | cut -d'(' -f1)
-    specifier=$(echo "$lockfile" | yq "${lock_selector_prefix}.${section}.\"$pkg\".specifier"
+    specifier=$(echo "$lockfile" | yq "${lock_selector_prefix}.${section}.\"$pkg\".specifier")
 
     echo " - $pkg@$specifier -> $raw_version"
 
