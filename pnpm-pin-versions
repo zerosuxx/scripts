@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version: 0.5.3
+# version: 0.5.4
 
 set -euo pipefail
 
@@ -60,6 +60,8 @@ for section in dependencies devDependencies; do
                                     ')
   done
 done
+
+echo ""
 
 if [[ $DRY_RUN != "true" ]]; then
   echo "$pkg_json" | jq . > "$PACKAGE_JSON"
