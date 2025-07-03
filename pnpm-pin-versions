@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version: 0.2.2
+# version: 0.3.0
 
 set -euo pipefail
 
@@ -42,9 +42,10 @@ for section in dependencies devDependencies; do
   fi
 
   for pkg in $packages; do
-    raw_version=$(echo "$lockfile" | yq "${lock_selector_prefix}.${section}.\"$pkg\".version"  | cut -d'(' -f1)
+    raw_version=$(echo "$lockfile" | yq "${lock_selector_prefix}.${section}.\"$pkg\".version" | cut -d'(' -f1)
+    specifier=$(echo "$lockfile" | yq "${lock_selector_prefix}.${section}.\"$pkg\".specifier"
 
-    echo " - $pkg@$raw_version"
+    echo " - $pkg@$specifier -> $raw_version"
 
     pkg_json=$(echo "$pkg_json" | jq --arg section "$section" \
                                     --arg pkg "$pkg" \
