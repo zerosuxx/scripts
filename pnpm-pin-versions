@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version: 0.4.0
+# version: 0.5.0
 
 set -euo pipefail
 
@@ -25,7 +25,8 @@ for tool in jq yq; do
 done
 
 lockfile=$(cat "$LOCKFILE")
-pkg_json=$(cat "$PACKAGE_JSON")
+original_pkg_json=$(cat "$PACKAGE_JSON")
+pkg_json="$original_pkg_json"
 
 if echo "$lockfile" | yq 'has("importers")' | grep -q true; then
   lock_selector_prefix=".importers.\"."
@@ -63,7 +64,7 @@ done
 if [[ $DRY_RUN != "true" ]]; then
   echo "$pkg_json" | jq . > "$PACKAGE_JSON"
 else
-  echo "$pkg_json" | jq .
+  diff <(echo "$original_pkg_json" | jq .) <(echo "$pkg_json" | jq .) || true
 fi
 
 echo "✅ package.json updated with exact versions!"
