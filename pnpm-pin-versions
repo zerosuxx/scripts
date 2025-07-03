@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version: 0.5.4
+# version: 0.5.5
 
 set -euo pipefail
 
@@ -29,7 +29,7 @@ original_pkg_json=$(cat "$PACKAGE_JSON")
 pkg_json="$original_pkg_json"
 
 if echo "$lockfile" | yq 'has("importers")' | grep -q true; then
-  lock_selector_prefix=".importers.\"."
+  lock_selector_prefix='.importers["."]'
 else
   lock_selector_prefix=""
 fi
