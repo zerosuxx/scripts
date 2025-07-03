@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version: 0.5.0
+# version: 0.5.1
 
 set -euo pipefail
 
@@ -17,7 +17,7 @@ if [[ ! -f "$PACKAGE_JSON" ]]; then
   exit 1
 fi
 
-for tool in jq yq; do
+for tool in jq yq diff; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "Error: Required tool '$tool' is not installed or not in PATH." >&2
     exit 1
@@ -64,7 +64,8 @@ done
 if [[ $DRY_RUN != "true" ]]; then
   echo "$pkg_json" | jq . > "$PACKAGE_JSON"
 else
-  diff <(echo "$original_pkg_json" | jq .) <(echo "$pkg_json" | jq .) || true
+  echo "🔎 Diffing changes (dry-run):"
+  diff --color=always <(echo "$original_pkg_json" | jq .) <(echo "$pkg_json" | jq .) || true
 fi
 
 echo "✅ package.json updated with exact versions!"
