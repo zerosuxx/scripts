@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version: 0.1.1
+# version: 0.2.0
 
 set -euo pipefail
 
@@ -15,6 +15,13 @@ if [[ ! -f "$PACKAGE_JSON" ]]; then
   echo "Error: $PACKAGE_JSON not found!" >&2
   exit 1
 fi
+
+for tool in jq yq; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "Error: Required tool '$tool' is not installed or not in PATH." >&2
+    exit 1
+  fi
+done
 
 lockfile=$(cat "$LOCKFILE")
 pkg_json=$(cat "$PACKAGE_JSON")
