@@ -3,8 +3,8 @@
 
 set -euo pipefail
 
-LOCKFILE="${LOCKFILE:-pnpm-lock.yaml}"
-PACKAGE_JSON="${PACKAGE_JSON:-package.json}"
+: ${LOCKFILE:-pnpm-lock.yaml}
+: ${PACKAGE_JSON:-package.json}
 
 if [[ ! -f "$LOCKFILE" ]]; then
   echo "Error: $LOCKFILE not found!" >&2
@@ -38,7 +38,6 @@ for section in dependencies devDependencies; do
 
     echo " - $pkg@$raw_version"
 
-    # Update the in-memory JSON
     pkg_json=$(echo "$pkg_json" | jq --arg section "$section" \
                                     --arg pkg "$pkg" \
                                     --arg ver "$raw_version" \
