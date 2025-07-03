@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# version: 0.2.1
+# version: 0.2.2
 
 set -euo pipefail
 
 : ${LOCKFILE:="pnpm-lock.yaml"}
 : ${PACKAGE_JSON:="package.json"}
-: "${DRY_RUN:="false"}"
+: ${DRY_RUN:="false"}
 
 if [[ ! -f "$LOCKFILE" ]]; then
   echo "Error: $LOCKFILE not found!" >&2
