@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# version: 0.1.0
+
+set -euo pipefail
+
+LOCKFILE="${LOCKFILE:-pnpm-lock.yaml}"
+PACKAGE_JSON="${PACKAGE_JSON:-package.json}"
+
+if [[ ! -f "$LOCKFILE" ]]; then
+  echo "Error: $LOCKFILE not found!" >&2
+  exit 1
+fi
+
+if [[ ! -f "$PACKAGE_JSON" ]]; then
+  echo "Error: $PACKAGE_JSON not found!" >&2
+  exit 1
+fi
+
+lockfile=$(cat "$LOCKFILE")
+pkg_json=$(cat "$PACKAGE_JSON")
+
+if echo "$lockfile" | yq 'has("importers")' | grep -q true; then
+  lock_selector_prefix=".importers.\"."
+else
+  lock_selector_prefix=""
+fi
+
+for section in dependencies devDependencies; do
+  echo "Processing $section..."
+
+  packages=$(echo "$lockfile" | yq "${lock_selector_prefix}.${section} | keys | .[]" || true)
+  if [[ -z "$packages" ]]; then
+    continue
+  fi
+
+  for pkg in $packages; do
+    raw_version=$(echo "$lockfile" | yq "${lock_selector_prefix}.${section}.\"$pkg\".version"  | cut -d'(' -f1)
+
+    echo " - $pkg@$raw_version"
+
+    # Update the in-memory JSON
+    pkg_json=$(echo "$pkg_json" | jq --arg section "$section" \
+                                    --arg pkg "$pkg" \
+                                    --arg ver "$raw_version" \
+                                    '
+                                    if .[$section][$pkg] != null then
+                                      .[$section][$pkg] = $ver
+                                    else
+                                      .
+                                    end
+                                    ')
+  done
+done
+
+if [[ $DRY_RUN != "true" ]]; then
+  echo "$pkg_json" | jq . > "$PACKAGE_JSON"
+else
+  echo "$pkg_json" | jq .
+fi
+
+echo "✅ package.json updated with exact versions!"
