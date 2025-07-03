@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version: 0.5.2
+# version: 0.5.3
 
 set -euo pipefail
 
@@ -63,7 +63,7 @@ done
 
 if [[ $DRY_RUN != "true" ]]; then
   echo "$pkg_json" | jq . > "$PACKAGE_JSON"
-  echo "✅ package.json updated with exact versions!"
+  echo "✅ package.json updated with exact versions! 🚀 Run 'pnpm install' to apply the updated specifiers (constraints)."
 else
   echo "🔎 Diffing changes (dry-run):"
   diff --color=always <(echo "$original_pkg_json" | jq .) <(echo "$pkg_json" | jq .) || true
