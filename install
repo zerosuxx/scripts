@@ -2,8 +2,8 @@
 
 set -e
 
-: ${INSTALL_DIR:="/usr/local/bin"}
-: ${NAME_SEPARATOR:="-"}
+: "${INSTALL_DIR:="/usr/local/bin"}"
+: "${NAME_SEPARATOR:="-"}"
 
 repo=$1
 binary=$2
@@ -14,48 +14,48 @@ os=$5
 default_padding=20
 
 if [ "$repo" = "" ]; then
-    current_script=`basename $0`
+  current_script=$(basename $0)
 	echo "Usage: $current_script repo [binary] [version] [arch] [os]"
 	echo "Available environment variables:"
 	echo " - INSTALL_DIR (default: /usr/local/bin)"
-
-    echo
+  echo
 	echo " > example #1: sudo $current_script zer0go/dns-server"
 	echo " > example #2: sudo $current_script zer0go/wgctrl-go wgshow"
 	echo " > example #3: sudo $current_script zer0go/wgctrl-go wgshow:wg"
-    echo " > example #4: curl -s https://scripts.zer0.hu/$current_script | sudo INSTALL_DIR=/usr/bin sh -s zer0go/wgctrl-go wgshow 0.1.2 x86_64 darwin"
+  echo " > example #4: curl -s https://scripts.zer0.hu/$current_script | sudo INSTALL_DIR=/usr/bin sh -s zer0go/wgctrl-go wgshow 0.1.2 x86_64 darwin"
+  echo " > example #5: wget -O- https://scripts.zer0.hu/$current_script | sudo INSTALL_DIR=/usr/bin sh -s zer0go/wgctrl-go wgshow 0.1.2 x86_64 darwin"
 
-    exit 1
+  exit 1
 fi
 
 if [ "$binary" = "" ]; then
-    binary=$(echo "$repo" | cut -d'/' -f2)
+  binary=$(echo "$repo" | cut -d'/' -f2)
 else
-    target_binary=$(echo "$binary" | cut -d':' -f2)
-    binary=$(echo "$binary" | cut -d':' -f1)
+  target_binary=$(echo "$binary" | cut -d':' -f2)
+  binary=$(echo "$binary" | cut -d':' -f1)
 fi
 
 if [ "$target_binary" = "" ]; then
-    target_binary="$binary"
+  target_binary="$binary"
 fi
 
 if [ "$version" = "" ]; then
-    version=$(curl -s https://scripts.zer0.hu/lv | sh -s "$repo")
-    if [ "$version" = "" ]; then
-        echo "version cannot be detected."
-        exit 1
-    fi
-    printf "%-${default_padding}s '%s'\n" "detected version:" "$version"
+  version=$(wget -O- https://scripts.zer0.hu/lv 2>/dev/null | sh -s "$repo")
+  if [ "$version" = "" ]; then
+    echo "version cannot be detected."
+    exit 1
+  fi
+  printf "%-${default_padding}s '%s'\n" "detected version:" "$version"
 fi
 
 if [ "$arch" = "" ]; then
-    arch=$(uname -m | tr '[:upper:]' '[:lower:]')
-    printf "%-${default_padding}s '%s'\n" "detected arch:" "$arch"
+  arch=$(uname -m | tr '[:upper:]' '[:lower:]')
+  printf "%-${default_padding}s '%s'\n" "detected arch:" "$arch"
 fi
 
 if [ "$os" = "" ]; then
-    os=$(uname -s | tr '[:upper:]' '[:lower:]')
-    printf "%-${default_padding}s '%s'\n" "detected os:" "$os"
+  os=$(uname -s | tr '[:upper:]' '[:lower:]')
+  printf "%-${default_padding}s '%s'\n" "detected os:" "$os"
 fi
 
 url="https://github.com/${repo}/releases/download/${version}/${binary}${NAME_SEPARATOR}${os}${NAME_SEPARATOR}${arch}"
@@ -67,9 +67,9 @@ printf "%-${default_padding}s '%s'\n" "url:" "$url"
 printf "%-${default_padding}s '%s'\n\n" "target file:" "$target_file"
 
 echo "progress:"
-curl -fL -o "$target_file" "$url"
+wget -O "$target_file" "$url"
 chmod +x "$target_file"
 
 echo
-echo "The '$repo@$binary:$version' was installed successfuly."
+echo "The '$repo@$binary:$version' was installed successfully."
 echo "try to execute the following command: '$target_binary'"
