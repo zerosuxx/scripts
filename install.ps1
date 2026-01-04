@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 # =========================================================
-# ARGUMENTS (Scoop-style: & { script } args...)
+# ARGUMENTS (Scoop-style invocation)
 # =========================================================
 
 $Repo       = $args[0]
@@ -13,7 +13,7 @@ if (-not $Repo) {
 }
 
 # =========================================================
-# PARSE REPO + VERSION (PURE)
+# PARSE REPO + VERSION
 # =========================================================
 
 if ($Repo -match '^(.+?)@(.+)$') {
@@ -31,24 +31,19 @@ $RepoName = ($RepoNameFull -split "/")[-1]
 # =========================================================
 
 $ProgramFilesX86 = ${Env:ProgramFiles(x86)}
-
 $Os  = "windows"
 $Ext = ".exe"
 
-$Separator = if ($env:BINARY_SEPARATOR -and $env:BINARY_SEPARATOR -ne "") {
-    $env:BINARY_SEPARATOR
-} else {
-    "-"
-}
+$Separator = if ($env:BINARY_SEPARATOR) { $env:BINARY_SEPARATOR } else { "-" }
 
-$Template = if ($env:BINARY_TEMPLATE -and $env:BINARY_TEMPLATE -ne "") {
+$Template = if ($env:BINARY_TEMPLATE) {
     $env:BINARY_TEMPLATE
 } else {
     "{Binary}{Sep}{Os}{Sep}{Arch}{Ext}"
 }
 
 # =========================================================
-# RESOLVE BINARY / TARGET NAMES
+# RESOLVE ASSET / TARGET NAMES
 # =========================================================
 
 if (-not $BinaryName) {
@@ -78,25 +73,46 @@ $TargetBinaryPath = Join-Path $InstallDir "$TargetName.exe"
 function Test-Admin {
     $id = [Security.Principal.WindowsIdentity]::GetCurrent()
     $p  = New-Object Security.Principal.WindowsPrincipal($id)
-    return $p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    $p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
 $IsAdmin = Test-Admin
 
 # =========================================================
-# ARCH DETECTION
+# ARCH DETECTION (ARCH_FORMAT)
 # =========================================================
 
-$archRaw = if ($env:PROCESSOR_ARCHITEW6432) {
+$CpuArch = if ($env:PROCESSOR_ARCHITEW6432) {
     $env:PROCESSOR_ARCHITEW6432
 } else {
     $env:PROCESSOR_ARCHITECTURE
 }
 
-$Arch = if ($archRaw -eq "ARM64") { "aarch64" } else { "x86_64" }
+$ArchFormat = if ($env:ARCH_FORMAT) {
+    $env:ARCH_FORMAT.ToLower()
+} else {
+    "linux"
+}
+
+switch ($ArchFormat) {
+    "go" {
+        if ($CpuArch -eq "ARM64") {
+            $Arch = "arm64"
+        } else {
+            $Arch = "amd64"
+        }
+    }
+    default {
+        if ($CpuArch -eq "ARM64") {
+            $Arch = "aarch64"
+        } else {
+            $Arch = "x86_64"
+        }
+    }
+}
 
 # =========================================================
-# BUILD ASSET FILENAME (TEMPLATE-BASED)
+# BUILD ASSET FILENAME (TEMPLATE)
 # =========================================================
 
 $BinaryFileName = $Template `
@@ -119,7 +135,9 @@ $BinaryUrl = if ($Version -eq "latest") {
 Write-Host "Repo        : $RepoNameFull"
 Write-Host "Version     : $Version"
 Write-Host "OS          : $Os"
-Write-Host "Architecture: $Arch"
+Write-Host "CPU arch    : $CpuArch"
+Write-Host "Arch format : $ArchFormat"
+Write-Host "Asset arch  : $Arch"
 Write-Host "Asset file  : $BinaryFileName"
 Write-Host "Binary URL  : $BinaryUrl"
 
@@ -162,11 +180,11 @@ if (-not $PathAdded) {
     Add-ToPath -Dir $InstallDir -Scope "User" | Out-Null
 }
 
-# Immediate usability (current session)
+# Immediate usability
 $env:PATH = "$InstallDir;$env:PATH"
 
 # =========================================================
-# UNINSTALL SCRIPT (MINIMAL, ENV API ONLY)
+# UNINSTALL SCRIPT (MINIMAL)
 # =========================================================
 
 $UninstallScript = @"
