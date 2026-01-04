@@ -1,13 +1,16 @@
-param(
-    [Parameter(Mandatory = $true)]
-    [string] $Repo,          # org/repo[@version]
-
-    [string] $BinaryName,    # name OR asset:target
-
-    [string] $InstallDir     # optional
-)
-
 $ErrorActionPreference = "Stop"
+
+# =========================================================
+# ARGUMENTS (curl | iex friendly)
+# =========================================================
+
+$Repo       = $args[0]
+$BinaryName = $args[1]
+$InstallDir = $args[2]
+
+if (-not $Repo) {
+    throw "Usage: install.ps1 <org/repo[@version]> [asset:binary] [installDir]"
+}
 
 # =========================================================
 # PARSE REPO + VERSION (PURE)
@@ -71,10 +74,6 @@ function Test-Admin {
 
 $IsAdmin = Test-Admin
 
-if (-not $IsAdmin) {
-    Write-Host "Running without admin rights → using User PATH if needed"
-}
-
 # =========================================================
 # ARCH DETECTION
 # =========================================================
@@ -108,13 +107,13 @@ New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 Invoke-RestMethod -Uri $BinaryUrl -OutFile $TargetBinaryPath
 
 # =========================================================
-# PATH HANDLING (ENVIRONMENT API ONLY)
+# PATH HANDLING (Environment API only)
 # =========================================================
 
 function Add-ToPath {
     param(
         [string] $Dir,
-        [string] $Scope   # "Machine" or "User"
+        [string] $Scope   # Machine | User
     )
 
     $current = [Environment]::GetEnvironmentVariable("Path", $Scope)
@@ -143,11 +142,11 @@ if (-not $PathAdded) {
     Add-ToPath -Dir $InstallDir -Scope "User" | Out-Null
 }
 
-# Immediate usability in this session
+# Immediate usability
 $env:PATH = "$InstallDir;$env:PATH"
 
 # =========================================================
-# UNINSTALL SCRIPT (MINIMAL, ENV API ONLY)
+# UNINSTALL SCRIPT (MINIMAL)
 # =========================================================
 
 $UninstallScript = @"
