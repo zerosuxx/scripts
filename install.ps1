@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 # =========================================================
-# ARGUMENTS (curl | iex friendly)
+# ARGUMENTS (Scoop-style: & { script } args...)
 # =========================================================
 
 $Repo       = $args[0]
@@ -32,14 +32,23 @@ $RepoName = ($RepoNameFull -split "/")[-1]
 
 $ProgramFilesX86 = ${Env:ProgramFiles(x86)}
 
+$Os  = "windows"
+$Ext = ".exe"
+
 $Separator = if ($env:BINARY_SEPARATOR -and $env:BINARY_SEPARATOR -ne "") {
     $env:BINARY_SEPARATOR
 } else {
     "-"
 }
 
+$Template = if ($env:BINARY_TEMPLATE -and $env:BINARY_TEMPLATE -ne "") {
+    $env:BINARY_TEMPLATE
+} else {
+    "{Binary}{Sep}{Os}{Sep}{Arch}{Ext}"
+}
+
 # =========================================================
-# RESOLVE BINARY NAMES
+# RESOLVE BINARY / TARGET NAMES
 # =========================================================
 
 if (-not $BinaryName) {
@@ -47,9 +56,9 @@ if (-not $BinaryName) {
     $TargetName = $RepoName
 }
 elseif ($BinaryName -like "*:*") {
-    $parts = $BinaryName -split ":", 2
-    $AssetName  = $parts[0]
-    $TargetName = $parts[1]
+    $p = $BinaryName -split ":", 2
+    $AssetName  = $p[0]
+    $TargetName = $p[1]
 }
 else {
     $AssetName  = $BinaryName
@@ -87,10 +96,19 @@ $archRaw = if ($env:PROCESSOR_ARCHITEW6432) {
 $Arch = if ($archRaw -eq "ARM64") { "aarch64" } else { "x86_64" }
 
 # =========================================================
-# DOWNLOAD
+# BUILD ASSET FILENAME (TEMPLATE-BASED)
 # =========================================================
 
-$BinaryFileName = "$AssetName${Separator}windows${Separator}$Arch.exe"
+$BinaryFileName = $Template `
+    -replace '\{Binary\}', $AssetName `
+    -replace '\{Sep\}',    $Separator `
+    -replace '\{Os\}',     $Os `
+    -replace '\{Arch\}',   $Arch `
+    -replace '\{Ext\}',    $Ext
+
+# =========================================================
+# DOWNLOAD
+# =========================================================
 
 $BinaryUrl = if ($Version -eq "latest") {
     "https://github.com/$RepoNameFull/releases/latest/download/$BinaryFileName"
@@ -100,20 +118,22 @@ $BinaryUrl = if ($Version -eq "latest") {
 
 Write-Host "Repo        : $RepoNameFull"
 Write-Host "Version     : $Version"
+Write-Host "OS          : $Os"
 Write-Host "Architecture: $Arch"
+Write-Host "Asset file  : $BinaryFileName"
 Write-Host "Binary URL  : $BinaryUrl"
 
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 Invoke-RestMethod -Uri $BinaryUrl -OutFile $TargetBinaryPath
 
 # =========================================================
-# PATH HANDLING (Environment API only)
+# PATH HANDLING (Environment API ONLY)
 # =========================================================
 
 function Add-ToPath {
     param(
         [string] $Dir,
-        [string] $Scope   # Machine | User
+        [string] $Scope  # Machine | User
     )
 
     $current = [Environment]::GetEnvironmentVariable("Path", $Scope)
@@ -142,11 +162,11 @@ if (-not $PathAdded) {
     Add-ToPath -Dir $InstallDir -Scope "User" | Out-Null
 }
 
-# Immediate usability
+# Immediate usability (current session)
 $env:PATH = "$InstallDir;$env:PATH"
 
 # =========================================================
-# UNINSTALL SCRIPT (MINIMAL)
+# UNINSTALL SCRIPT (MINIMAL, ENV API ONLY)
 # =========================================================
 
 $UninstallScript = @"
