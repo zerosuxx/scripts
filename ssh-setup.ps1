@@ -31,13 +31,14 @@ $keys | Set-Content -Path $keysPath -Encoding ascii
 icacls.exe $keysPath /inheritance:r /grant 'Administrators:F' /grant 'SYSTEM:F' | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Could not set permissions on administrators_authorized_keys.' }
 
+Set-Service -Name sshd -StartupType Automatic
+Start-Service -Name sshd
+
 $config = Get-Content -Path $configPath -Raw
 if ($config -notmatch '(?m)^\s*Match\s+Group\s+administrators\s*$') {
     Add-Content -Path $configPath -Value "`nMatch Group administrators`n    AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys"
 }
 
-Set-Service -Name sshd -StartupType Automatic
-Start-Service -Name sshd
 Restart-Service -Name sshd
 
 if (-not (Get-NetFirewallRule -Name OpenSSH-Server-In-TCP -ErrorAction SilentlyContinue)) {
